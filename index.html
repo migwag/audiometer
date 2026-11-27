@@ -1,0 +1,1061 @@
+<meta charset="utf-8">
+<title>Extended-Range Audiometer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: instrument-panel page. Header strip, then a two-column bench (prep controls | audiogram chart), then a full-width EQ bench, then reference notes. */
+:root{
+  --bg:#eef2f3; --surface:#ffffff; --surface-2:#f6f8f9; --ink:#14212b; --muted:#566874; --line:#d3dde2; --grid:#e1e8ec; --grid-strong:#b9c6cd;
+  --accent:#0d6b73; --accent-ink:#ffffff; --accent-soft:#d9eef0;
+  --right:#c62f28; --left:#1d5bbd; --warn:#a15c00; --warn-soft:#fbefd9; --ok:#2b7a3d;
+  --ehf:#f3eee3; --band:#f4f7f8;
+  --ov-bg:#0c1419; --ov-ink:#e8eff2; --ov-muted:#8ea1ac; --ov-line:#22323b;
+  --f-display:"Instrument Sans","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans","Helvetica Neue",Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1418; --surface:#141e24; --surface-2:#18242b; --ink:#e3ebef; --muted:#93a5af; --line:#26353e; --grid:#1f2c34; --grid-strong:#3a4c57;
+  --accent:#4cc0c8; --accent-ink:#06191b; --accent-soft:#143538;
+  --right:#ff6d60; --left:#72a8ff; --warn:#f0b04a; --warn-soft:#3a2b12; --ok:#6fcf86;
+  --ehf:#1d2220; --band:#17222a; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1418; --surface:#141e24; --surface-2:#18242b; --ink:#e3ebef; --muted:#93a5af; --line:#26353e; --grid:#1f2c34; --grid-strong:#3a4c57;
+  --accent:#4cc0c8; --accent-ink:#06191b; --accent-soft:#143538;
+  --right:#ff6d60; --left:#72a8ff; --warn:#f0b04a; --warn-soft:#3a2b12; --ok:#6fcf86;
+  --ehf:#1d2220; --band:#17222a; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:1.75rem;font-weight:700}
+h2{font-size:1.2rem;font-weight:600}
+h3{font-size:.95rem;font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;padding-block:28px 4px;border-bottom:1px solid var(--line);padding-bottom:16px}
+header.top .sub{max-width:62ch;color:var(--muted);margin-top:6px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-family:var(--f-mono);font-size:.75rem;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.bench{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.bench{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.step{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0;padding-top:0}
+.step-title{display:flex;gap:8px;align-items:baseline}
+.step-title .n{font-family:var(--f-mono);font-size:.75rem;color:var(--accent);font-weight:500}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.field .lab{font-size:.8rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input[type=number],input[type=text],select{font:inherit;font-size:.9rem;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:6px 8px;min-width:0;width:100%}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=checkbox]{accent-color:var(--accent)}
+button{font:inherit;font-size:.88rem;font-weight:500;cursor:pointer;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:7px 12px;line-height:1.2}
+button:hover{border-color:var(--grid-strong)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.primary:hover{filter:brightness(1.07)}
+button.big{padding:12px 18px;font-size:1rem}
+button:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.check input{margin-top:3px;flex:none}
+.freqs{display:flex;flex-wrap:wrap;gap:6px}
+.freqs label{display:inline-flex;align-items:center;gap:4px;font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);border-radius:6px;padding:3px 7px;background:var(--surface-2);cursor:pointer;user-select:none}
+.freqs label.ehf{background:var(--ehf)}
+.freqs label.off{opacity:.4;cursor:not-allowed}
+.freqs input{margin:0}
+.disclaimer{margin-top:20px;display:flex;gap:12px;align-items:flex-start;background:var(--warn-soft);border:1px solid var(--warn);border-radius:var(--r);padding:12px 16px;font-size:.88rem;line-height:1.5}
+.disclaimer .ico{flex:none;font-weight:700;color:var(--warn);font-family:var(--f-display);font-size:1.1rem;line-height:1.3}
+.disclaimer p{max-width:110ch}
+.disclaimer b{color:var(--ink)}
+.dl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.callout{font-size:.85rem;background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:10px 12px;border-left:3px solid var(--warn)}
+.callout b{color:var(--warn)}
+.chart-box{overflow-x:auto;min-width:0}
+svg text{font-family:var(--f-mono)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);align-items:center}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.stat{background:var(--surface-2);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.stat .v{font-family:var(--f-mono);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.stat .v b{font-weight:500}
+.stat.r .v b{color:var(--right)} .stat.l .v b{color:var(--left)}
+.table-box{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;font-size:.82rem;width:100%}
+th,td{padding:5px 6px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-mono);font-weight:500;color:var(--muted);background:var(--surface-2)}
+th.ehf,td.ehf{background:var(--ehf)}
+td.ear{font-weight:600;text-align:left;padding-left:10px}
+td.ear.r{color:var(--right)} td.ear.l{color:var(--left)}
+tr:last-child td{border-bottom:0}
+.tin{width:52px;text-align:center;font-family:var(--f-mono);padding:4px 2px;font-size:.82rem}
+.notice{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.85rem;background:var(--accent-soft);padding:8px 12px;border-radius:8px}
+.notes-list{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
+.notes-list li{max-width:80ch}
+.eq-bench{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.eq-bench{grid-template-columns:minmax(0,1fr)}}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);padding:8px 10px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+textarea{width:100%;min-height:190px;font-family:var(--f-mono);font-size:.78rem;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}
+.ab{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ab button{border:0;border-radius:0;background:var(--surface-2)}
+.ab button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.cols ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.cols li{font-size:.86rem;color:var(--muted)}
+.cols li b{color:var(--ink);font-weight:600}
+.val{font-family:var(--f-mono);font-size:.8rem;color:var(--ink)}
+
+/* Test overlay */
+#overlay{position:fixed;inset:0;z-index:50;background:var(--ov-bg);color:var(--ov-ink);display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px))}
+#overlay[hidden]{display:none!important}
+.ov-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.ov-top .meta{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.ear-chip{font-family:var(--f-display);font-weight:700;font-size:1.3rem}
+.ear-chip.R{color:#ff7a6e} .ear-chip.L{color:#7fb0ff}
+.ov-top .mono{color:var(--ov-muted)}
+.ov-top button{background:transparent;color:var(--ov-ink);border-color:var(--ov-line)}
+.ov-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center}
+.respond{width:min(440px,86vw);aspect-ratio:1/1;max-height:52vh;border-radius:50%;border:2px solid var(--ov-line);background:#111d24;color:var(--ov-ink);
+  font-family:var(--f-display);font-size:1.15rem;font-weight:600;line-height:1.4;touch-action:manipulation;transition:background .08s,border-color .08s;max-width:100%}
+.respond small{display:block;font-family:var(--f-body);font-weight:400;color:var(--ov-muted);font-size:.85rem;margin-top:6px}
+.respond.hit{background:#1c4f55;border-color:#4cc0c8}
+.respond:hover{border-color:#3d5563}
+.ov-intro{max-width:56ch;display:flex;flex-direction:column;gap:14px;text-align:left;font-size:.98rem}
+.ov-intro ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;color:#c6d3da}
+.ov-intro button.primary{align-self:flex-start;background:#4cc0c8;color:#06191b;border-color:#4cc0c8}
+.bar{height:4px;background:var(--ov-line);border-radius:2px;overflow:hidden;width:100%}
+.bar span{display:block;height:100%;background:#4cc0c8;width:0;transition:width .4s}
+.ov-status{color:var(--ov-muted);font-size:.9rem;min-height:1.4em}
+.paused-badge{font-family:var(--f-mono);color:#f0b04a}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <aside class="disclaimer" role="note" aria-label="Disclaimer">
+    <span class="ico" aria-hidden="true">!</span>
+    <p><b>Not a medical diagnosis.</b> This is a self-test for information only and does not replace an examination by an audiologist or doctor. Results depend on your volume setting and calibration and on the frequency response of the headphones you use, so they can differ from a clinical audiogram by 10 dB or more. If you notice sudden hearing loss, a difference between your ears, ear pain or new tinnitus, see a professional.</p>
+  </aside>
+  <header class="top">
+    <div>
+      <div class="label">Pure-tone air-conduction audiometry · 125 Hz – 20 kHz</div>
+      <h1>Extended-Range Audiometer</h1>
+      <p class="sub">Measures your hearing thresholds with the modified Hughson-Westlake procedure an audiologist uses, adds the extended high frequencies above 8 kHz, plots a standard audiogram and turns it into a compensation EQ for your monitoring chain.</p>
+    </div>
+    <div class="chips">
+      <span class="chip" id="srChip">sample rate —</span>
+      <span class="chip" id="calChip">uncalibrated</span>
+    </div>
+  </header>
+
+  <div class="bench">
+    <!-- PREP -->
+    <section class="panel" aria-labelledby="prepH">
+      <div class="panel-head"><h2 id="prepH">Prepare &amp; run</h2></div>
+
+      <div class="step">
+        <div class="step-title"><span class="n">1</span><h3>Room and headphones</h3></div>
+        <p class="small muted">Use wired, closed-back or circumaural headphones (no Bluetooth, no noise cancelling, no spatial audio or system EQ). Sit in the quietest room you have; low frequencies are the first to be masked by room noise.</p>
+        <div class="row">
+          <button id="chkL" type="button">Play left</button>
+          <button id="chkR" type="button">Play right</button>
+          <span class="small muted">Check each tone comes from the correct side.</span>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title"><span class="n">2</span><h3>Set and lock the volume</h3></div>
+        <div class="callout"><b>Start with the volume low.</b> The reference tone below is the loudest sound used for calibration. Raise system or interface volume until it is loud but comfortable, about a raised voice at arm's length (≈80 dB SPL). Then leave volume alone for the whole test, and note the setting so you can repeat it.</div>
+        <div class="row">
+          <button id="refTone" type="button">Play reference tone (1 kHz, −20 dBFS, 4 s)</button>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="calFS">Output at 0 dBFS (dB SPL)</label>
+            <input id="calFS" type="number" step="0.5" value="100">
+          </div>
+          <div class="field">
+            <label for="maxHL">Never exceed (est. dB HL)</label>
+            <input id="maxHL" type="number" step="5" value="85" min="20" max="110">
+          </div>
+        </div>
+        <p class="small muted">With an SPL meter or measurement mic on the ear cup, measure the reference tone and enter <span class="mono">measured + 20</span>. Without one, keep 100 and set the volume by ear as above; results are then estimates in dB HL.</p>
+      </div>
+
+      <div class="step">
+        <div class="step-title"><span class="n">3</span><h3>Frequencies</h3></div>
+        <div class="freqs" id="freqList"></div>
+        <div class="row small">
+          <button type="button" id="fStd">Clinical set</button>
+          <button type="button" id="fAll">Clinical + extended</button>
+          <span class="muted" id="estTime"></span>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-title"><span class="n">4</span><h3>Test options</h3></div>
+        <div class="grid2">
+          <div class="field">
+            <label for="toneType">Stimulus</label>
+            <select id="toneType">
+              <option value="pulsed">Pulsed pure tone</option>
+              <option value="pulsedWarble">Pulsed warble (helps with tinnitus)</option>
+              <option value="steady">Steady pure tone</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="earOrder">Start with</label>
+            <select id="earOrder">
+              <option value="R">Right ear</option>
+              <option value="L">Left ear</option>
+            </select>
+          </div>
+        </div>
+        <label class="check small"><input type="checkbox" id="merge"> Keep existing results and only replace the frequencies tested now</label>
+      </div>
+
+      <button class="primary big" id="startBtn" type="button">Start hearing test</button>
+    </section>
+
+    <!-- AUDIOGRAM -->
+    <section class="panel" aria-labelledby="agH">
+      <div class="panel-head">
+        <h2 id="agH">Audiogram</h2>
+        <span class="row"><span class="small muted mono" id="sessMeta"></span><button type="button" id="dlAudiogram">Download audiogram (PNG)</button><span class="small muted" id="agMsg" role="status"></span></span>
+      </div>
+      <div class="notice" id="exampleNotice"><b>Example data.</b> <span>This is a sample mild-to-moderate sloping loss so you can see the output. Run the test or type your own values into the table.</span></div>
+      <div class="legend">
+        <span><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="var(--right)" stroke-width="2"/></svg>Right ear</span>
+        <span><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 3L13 13M13 3L3 13" stroke="var(--left)" stroke-width="2"/></svg>Left ear</span>
+        <span><svg width="24" height="20" viewBox="0 0 24 20"><circle cx="14" cy="7" r="5" fill="none" stroke="var(--muted)" stroke-width="1.8"/><path d="M10 11L3 18M3 18h6M3 18v-6" stroke="var(--muted)" stroke-width="1.6" fill="none"/></svg>No response at the limit</span>
+      </div>
+      <div class="chart-box"><svg id="audiogram" viewBox="0 0 700 560" role="img" aria-label="Audiogram" style="width:100%;min-width:520px;height:auto;display:block"></svg></div>
+      <div class="summary" id="summary"></div>
+      <div>
+        <div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="label">Thresholds, dB HL (editable: number or NR)</span><span class="small muted">Enter values from a clinical audiogram here to build an EQ from it.</span></div>
+        <div class="table-box"><table id="thrTable"></table></div>
+      </div>
+      <div class="notes-list" id="flags"></div>
+    </section>
+  </div>
+
+  <!-- EQ -->
+  <section class="panel" aria-labelledby="eqH">
+    <div class="panel-head">
+      <h2 id="eqH">Compensation EQ</h2>
+      <span class="small muted">For your monitoring path only. Never print it into a mix or master.</span>
+    </div>
+    <div class="eq-bench">
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div class="field">
+          <label for="eqRule">Prescription</label>
+          <select id="eqRule">
+            <option value="ratio">Proportional (fraction of loss)</option>
+            <option value="nalr">NAL-R (hearing-aid formula, adapted)</option>
+          </select>
+        </div>
+        <div class="field" id="strengthF">
+          <span class="lab">Compensation strength <span class="val" id="strengthV"></span></span>
+          <input type="range" id="strength" min="0" max="100" step="5" value="50" aria-label="Compensation strength">
+          <div class="row small"><button type="button" data-str="33">⅓ gentle</button><button type="button" data-str="50">½ half-gain</button><button type="button" data-str="100">full</button></div>
+        </div>
+        <div class="field" id="floorF">
+          <span class="lab">Treat loss up to <span class="val" id="floorV"></span> as normal</span>
+          <input type="range" id="floor" min="0" max="30" step="5" value="15" aria-label="Loss treated as normal">
+        </div>
+        <div class="field">
+          <span class="lab">Maximum boost <span class="val" id="capV"></span></span>
+          <input type="range" id="cap" min="6" max="30" step="1" value="18" aria-label="Maximum boost">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="eqRef">Level reference</label>
+            <select id="eqRef">
+              <option value="min">Lowest band = 0 dB</option>
+              <option value="k1">1 kHz = 0 dB</option>
+              <option value="abs">Absolute gain</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="eqEars">Ears</label>
+            <select id="eqEars">
+              <option value="sep">Separate L / R</option>
+              <option value="avg">Average both</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="eqBands">Bands</label>
+          <select id="eqBands">
+            <option value="test">One bell per tested frequency</option>
+            <option value="oct8">8 octave bands (fits most DAW EQs)</option>
+          </select>
+        </div>
+        <label class="check small"><input type="checkbox" id="eqEHF" checked> Include extended high frequencies (above 8 kHz)</label>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div class="legend">
+          <span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--right)" stroke-width="2.5"/></svg>Right EQ</span>
+          <span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--left)" stroke-width="2.5"/></svg>Left EQ</span>
+          <span><svg width="22" height="8"><line x1="0" y1="4" x2="22" y2="4" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>Target</span>
+          <span class="mono" id="preampV"></span>
+        </div>
+        <div class="chart-box"><svg id="eqChart" viewBox="0 0 700 300" role="img" aria-label="EQ response" style="width:100%;min-width:480px;height:auto;display:block"></svg></div>
+        <div class="table-box"><table id="bandTable"></table></div>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div class="tabs" role="tablist" id="expTabs">
+          <button role="tab" aria-selected="true" data-fmt="list">Band list</button>
+          <button role="tab" aria-selected="false" data-fmt="apo">Equalizer APO</button>
+          <button role="tab" aria-selected="false" data-fmt="csv">Curve CSV</button>
+          <button role="tab" aria-selected="false" data-fmt="json">Session JSON</button>
+        </div>
+        <textarea id="expText" readonly aria-label="Export text"></textarea>
+        <div class="row">
+          <button class="primary" type="button" id="copyBtn">Copy</button>
+          <span class="small muted" id="copyMsg"></span>
+          <span style="flex:1"></span>
+          <label class="small muted" for="importFile">Load a saved session JSON</label>
+          <input type="file" id="importFile" accept=".json,application/json" style="max-width:200px;font-size:.8rem">
+        </div>
+        <p class="small muted" id="fmtHelp"></p>
+        <div class="dl-row">
+          <span class="label">Download</span>
+          <button type="button" id="dlApo">EQ preset (.txt)</button>
+          <button type="button" id="dlList">Band list (.txt)</button>
+          <button type="button" id="dlCsv">Curve (.csv)</button>
+          <span class="small muted" id="dlMsg" role="status"></span>
+        </div>
+        <p class="small muted">The EQ preset uses the Equalizer APO / Peace format. If a download doesn't start, use Copy above instead.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <h3>Listen through the EQ</h3>
+        <p class="small muted">Load a reference track or use pink noise, then switch between flat and compensated. Turn your monitor level down first: the EQ adds up to <span class="mono" id="maxBoostTxt">—</span> at its peak, offset by the preamp.</p>
+        <div class="row">
+          <input type="file" id="audioFile" accept="audio/*" style="max-width:240px;font-size:.8rem" aria-label="Load audio file">
+          <button type="button" id="pinkBtn">Use pink noise</button>
+        </div>
+        <div class="row">
+          <button type="button" class="primary" id="playBtn" disabled>Play</button>
+          <div class="ab" role="group" aria-label="EQ bypass">
+            <button type="button" id="abFlat" aria-pressed="false">Flat</button>
+            <button type="button" id="abEq" aria-pressed="true">Compensated</button>
+          </div>
+          <span class="small muted" id="srcName">No source loaded</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="refH">
+    <h2 id="refH">How to read this, and its limits</h2>
+    <div class="cols">
+      <ul>
+        <li><b>Procedure.</b> Each frequency starts at 40 dB HL, drops 10 dB after every response and rises 5 dB after every miss. Threshold is the lowest level heard on 2 ascending presentations. Order follows clinical practice: 1 kHz up to the highest frequency, a 1 kHz retest, then the low frequencies.</li>
+        <li><b>Reliability checks.</b> Random silent catch trials and presses between tones count as false responses. A 1 kHz retest that differs by more than 10 dB means the run was inconsistent.</li>
+        <li><b>dB HL.</b> 0 dB HL is the median threshold of young normal listeners at each frequency. Levels are converted with reference values for circumaural audiometric headphones (ISO 389-5 / 389-8). 18 and 20 kHz have no standard reference, so treat them as relative.</li>
+      </ul>
+      <ul>
+        <li><b>Calibration.</b> Without a measured output level, absolute values can be off by 10 dB or more. Your headphones' own frequency response is folded into every threshold. This does not matter if you apply the EQ on the same headphones at the same volume; for speakers it adds error.</li>
+        <li><b>Air conduction only.</b> No bone conduction and no masking. If one ear is 40 dB or more worse, sound can cross to the better ear and the worse ear will look better than it is.</li>
+        <li><b>Extended high frequencies</b> drop with age even in healthy ears, so loss above 10 kHz is common and partly expected. It is often the earliest sign of noise damage, which makes it worth tracking over time.</li>
+      </ul>
+      <ul>
+        <li><b>Not a diagnosis.</b> See an audiologist or ENT for sudden changes, a difference between ears, ear pain, or new tinnitus.</li>
+        <li><b>Using the EQ.</b> Put it on the control-room or headphone output (monitor controller, Control Room / cue path, or a system-wide EQ), never on the mix bus. A mix balanced through it will sound dull to everyone else if it gets printed.</li>
+        <li><b>Do not chase the full loss.</b> Large boosts above 10 kHz mostly add hiss and fatigue. Half-gain with an 18 dB ceiling is a sensible start; adjust by ear on familiar reference tracks.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<!-- TEST OVERLAY -->
+<div id="overlay" hidden role="dialog" aria-modal="true" aria-label="Hearing test">
+  <div class="ov-top">
+    <div class="meta">
+      <span class="ear-chip R" id="ovEar">Right ear</span>
+      <span class="mono" id="ovFreq"></span>
+      <span class="mono" id="ovProg"></span>
+      <span class="paused-badge" id="ovPaused" hidden>PAUSED</span>
+    </div>
+    <div class="row">
+      <button type="button" id="ovPause">Pause</button>
+      <button type="button" id="ovStop">Stop and keep results</button>
+    </div>
+  </div>
+  <div class="bar" style="margin-top:12px"><span id="ovBar"></span></div>
+  <div class="ov-center">
+    <div class="ov-intro" id="ovIntro">
+      <h2 style="font-size:1.6rem">Before you start</h2>
+      <ol>
+        <li>Put the headphones on: red or "R" on the right ear. Remove glasses and earrings if they lift the cups.</li>
+        <li>You will hear groups of short beeps, often very faint. Press <b>Space</b> (or tap the circle) as soon as you think you hear one, even if you are unsure.</li>
+        <li>Don't try to predict the timing. Pauses between tones are random, and some trials are deliberately silent.</li>
+        <li>Plan for 15–25 minutes. Press <b>Esc</b> to pause at any time.</li>
+      </ol>
+      <button type="button" class="primary big" id="ovBegin">Begin</button>
+    </div>
+    <button type="button" class="respond" id="respond" hidden>I hear it<small>Space bar or tap</small></button>
+    <div class="ov-status" id="ovStatus"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- constants ---------- */
+const FREQS=[125,250,500,750,1000,1500,2000,3000,4000,6000,8000,9000,10000,11200,12500,14000,16000,18000,20000];
+const STD=new Set([125,250,500,1000,2000,3000,4000,6000,8000]);
+const EXT_DEFAULT=new Set([...STD,9000,10000,11200,12500,14000,16000]);
+// Reference equivalent threshold SPL for circumaural audiometric headphones (approx. ISO 389-5 / 389-8). 18k/20k extrapolated.
+const RETSPL={125:30.5,250:18,500:11,750:6,1000:5.5,1500:5.5,2000:4.5,3000:2.5,4000:9.5,6000:17,8000:17.5,9000:18.5,10000:22,11200:23,12500:28,14000:36,16000:56,18000:72,20000:90};
+const STORE_KEY="ehf-audiometer-session-v1";
+const fmtF=f=>f>=1000?(f/1000).toFixed(f%1000?1:0)+"k":String(f);
+const fmtHz=f=>f>=1000?(f/1000).toFixed(f%1000?1:0)+" kHz":f+" Hz";
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const sgn=v=>(v>=0?"+":"−")+Math.abs(v).toFixed(1);
+
+/* ---------- storage ---------- */
+function store(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function load(k){try{const s=localStorage.getItem(k);return s?JSON.parse(s):null}catch(e){return null}}
+
+/* ---------- example session ---------- */
+function exampleSession(){
+  const R={125:10,250:15,500:20,1000:25,2000:35,3000:40,4000:50,6000:55,8000:50,9000:55,10000:60,11200:65,12500:70,14000:75,16000:{nr:true,hl:45}};
+  const L={125:15,250:15,500:20,1000:30,2000:40,3000:45,4000:55,6000:60,8000:55,9000:60,10000:65,11200:70,12500:75,14000:{nr:true,hl:55},16000:{nr:true,hl:45}};
+  const conv=o=>Object.fromEntries(Object.entries(o).map(([f,v])=>[f,typeof v==="number"?{hl:v,nr:false}:v]));
+  return {example:true,date:null,calFS:100,results:{R:conv(R),L:conv(L)},retest:{},stats:null};
+}
+let session=load(STORE_KEY)||exampleSession();
+
+/* ---------- audio ---------- */
+let ctx=null;
+function getCtx(){
+  if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:"interactive"});}
+  if(ctx.state==="suspended")ctx.resume();
+  return ctx;
+}
+function cosRamp(amp,up){const n=64,a=new Float32Array(n);for(let i=0;i<n;i++){const x=0.5-0.5*Math.cos(Math.PI*i/(n-1));a[i]=amp*(up?x:1-x);}return a;}
+/** schedule a tone; ear: 'L'|'R'|'B'; returns ctx times */
+function scheduleTone(ear,f,dbfs,type,dur){
+  const c=getCtx(),t0=c.currentTime+0.06,amp=Math.pow(10,dbfs/20),ramp=0.025;
+  const osc=c.createOscillator();osc.type="sine";osc.frequency.value=f;
+  const env=c.createGain();env.gain.value=0;
+  const merger=c.createChannelMerger(2);
+  osc.connect(env);
+  if(ear!=="R")env.connect(merger,0,0);
+  if(ear!=="L")env.connect(merger,0,1);
+  merger.connect(c.destination);
+  let lfo=null;
+  if(type==="pulsedWarble"){lfo=c.createOscillator();lfo.frequency.value=5;const d=c.createGain();d.gain.value=f*0.05;lfo.connect(d);d.connect(osc.frequency);lfo.start(t0);}
+  const segs=(type==="steady"||dur)?[[0,dur||1.0]]:[[0,0.225],[0.425,0.65],[0.85,1.075]];
+  const up=cosRamp(amp,true),down=cosRamp(amp,false);
+  for(const [a,b] of segs){env.gain.setValueCurveAtTime(up,t0+a,ramp);env.gain.setValueCurveAtTime(down,t0+b-ramp,ramp);}
+  const t1=t0+segs[segs.length-1][1];
+  osc.start(t0);osc.stop(t1+0.05);if(lfo)lfo.stop(t1+0.05);
+  osc.onended=()=>{try{merger.disconnect();env.disconnect();}catch(e){}};
+  return {t0,t1};
+}
+function readCal(){const v=parseFloat($("calFS").value);return isFinite(v)?v:100;}
+function retspl(f){
+  if(RETSPL[f]!=null)return RETSPL[f];
+  const ks=Object.keys(RETSPL).map(Number).sort((a,b)=>a-b);
+  if(f<=ks[0])return RETSPL[ks[0]];if(f>=ks[ks.length-1])return RETSPL[ks[ks.length-1]];
+  for(let i=0;i<ks.length-1;i++)if(f>=ks[i]&&f<=ks[i+1]){const t=Math.log2(f/ks[i])/Math.log2(ks[i+1]/ks[i]);return RETSPL[ks[i]]+t*(RETSPL[ks[i+1]]-RETSPL[ks[i]]);}
+}
+const hlToDbfs=(f,hl,cal)=>hl+retspl(f)-cal;
+const maxHLFor=(f,cal,lim)=>Math.floor(Math.min(lim,-1-retspl(f)+cal));
+
+/* ---------- staircase (pure: takes an async present(level)->bool) ---------- */
+async function findThreshold(present,{start=40,minHL=-10,maxHL=85}){
+  let L=clamp(start,minHL,maxHL);
+  // familiarisation: ascend in 15 dB steps until heard
+  let heard=await present(L);
+  while(!heard){
+    if(L>=maxHL){heard=await present(maxHL);if(!heard)return {nr:true,hl:maxHL};break;}
+    L=Math.min(maxHL,L+15);heard=await present(L);
+  }
+  const asc={};let last=true,best=null;
+  for(let n=0;n<40;n++){
+    let ascending;
+    if(last){L=Math.max(minHL,L-10);ascending=(L===minHL);}else{L=L+5;ascending=true;}
+    if(L>maxHL){L=maxHL;}
+    heard=await present(L);
+    if(ascending){
+      const a=asc[L]||(asc[L]={n:0,yes:0});a.n++;if(heard){a.yes++;best=best==null?L:Math.min(best,L);}
+      if(a.yes>=2)return {nr:false,hl:L};
+      if(L===maxHL&&a.n>=3&&a.yes===0)return {nr:true,hl:maxHL};
+    }
+    last=heard;
+  }
+  return best!=null?{nr:false,hl:best,unsure:true}:{nr:true,hl:maxHL};
+}
+
+/* ---------- test runner ---------- */
+let T=null; // live test state
+function onResponse(){
+  if(!T||!T.running)return;
+  const b=$("respond");b.classList.add("hit");setTimeout(()=>b.classList.remove("hit"),140);
+  if(T.paused)return;
+  const now=ctx.currentTime,w=T.window;
+  if(w&&now>=w.start&&now<=w.end){w.resolve(true);}
+  else{T.falsePress++;T.pressedInWait=true;}
+}
+function collect(start,end){
+  return new Promise(res=>{
+    const w={start,end,done:false,resolve(v){if(w.done)return;w.done=true;clearInterval(w.iv);if(T.window===w)T.window=null;res(v);}};
+    T.window=w;
+    w.iv=setInterval(()=>{if(T.abort||ctx.currentTime>end)w.resolve(false);},25);
+  });
+}
+async function checkFlow(){
+  if(T.abort)throw new Error("abort");
+  while(T.paused){await sleep(120);if(T.abort)throw new Error("abort");}
+}
+async function randomWait(){
+  let ms=1100+Math.random()*2100;
+  T.pressedInWait=false;
+  const tStart=performance.now();
+  while(performance.now()-tStart<ms){
+    await sleep(40);await checkFlow();
+    if(T.pressedInWait){T.pressedInWait=false;ms+=1200;}
+  }
+}
+function makePresenter(ear,f){
+  return async function present(hl){
+    await randomWait();
+    if(Math.random()<0.08){ // silent catch trial
+      T.catchTrials++;const now=ctx.currentTime+0.06;
+      if(await collect(now+0.12,now+1.075+1.2))T.catchHits++;
+      await randomWait();
+    }
+    await checkFlow();
+    const {t0,t1}=scheduleTone(ear,f,hlToDbfs(f,hl,T.cal),T.toneType);
+    T.trials++;
+    return await collect(t0+0.12,t1+1.2);
+  };
+}
+function readSettings(){
+  const freqs=[...document.querySelectorAll("#freqList input:checked")].map(i=>+i.value);
+  return {freqs,cal:readCal(),maxHL:parseFloat($("maxHL").value)||85,toneType:$("toneType").value,earOrder:$("earOrder").value,merge:$("merge").checked};
+}
+function buildPlan(s){
+  const ears=s.earOrder==="R"?["R","L"]:["L","R"];
+  const hi=[1000,1500,2000,3000,4000,6000,8000,9000,10000,11200,12500,14000,16000,18000,20000].filter(f=>s.freqs.includes(f));
+  const lo=[750,500,250,125].filter(f=>s.freqs.includes(f));
+  const plan=[];
+  for(const ear of ears){hi.forEach(f=>plan.push({ear,f}));if(s.freqs.includes(1000))plan.push({ear,f:1000,retest:true});lo.forEach(f=>plan.push({ear,f}));}
+  return plan;
+}
+async function startTest(){
+  const s=readSettings();
+  if(!s.freqs.length)return;
+  getCtx();
+  const base=(s.merge&&!session.example)?JSON.parse(JSON.stringify(session)):{results:{R:{},L:{}},retest:{}};
+  const sess={example:false,date:new Date().toISOString(),calFS:s.cal,toneType:s.toneType,results:base.results,retest:base.retest||{},stats:null,sampleRate:ctx.sampleRate};
+  T={running:true,paused:false,abort:false,window:null,falsePress:0,catchTrials:0,catchHits:0,trials:0,cal:s.cal,toneType:s.toneType,pressedInWait:false};
+  const plan=buildPlan(s);
+  $("overlay").hidden=false;$("ovIntro").hidden=false;$("respond").hidden=true;$("ovStatus").textContent="";
+  $("ovBar").style.width="0";$("ovProg").textContent=`0 / ${plan.length}`;setOvEar(plan[0].ear);$("ovFreq").textContent="";
+  await new Promise(r=>{$("ovBegin").onclick=r;});
+  if(T.abort){endTest(sess,true);return;}
+  $("ovIntro").hidden=true;$("respond").hidden=false;$("respond").focus();
+  let aborted=false;
+  try{
+    for(let i=0;i<plan.length;i++){
+      const p=plan[i];
+      setOvEar(p.ear);$("ovFreq").textContent=fmtHz(p.f)+(p.retest?" · retest":"");
+      $("ovProg").textContent=`${i+1} / ${plan.length}`;$("ovBar").style.width=(i/plan.length*100)+"%";
+      $("ovStatus").textContent="";
+      const lim=maxHLFor(p.f,s.cal,s.maxHL);
+      const r=await findThreshold(makePresenter(p.ear,p.f),{start:Math.min(40,lim),minHL:-10,maxHL:lim});
+      if(p.retest){sess.retest[p.ear]={first:sess.results[p.ear][1000],second:r};}
+      else sess.results[p.ear][p.f]=r;
+      session=sess;renderResults();
+      if(i<plan.length-1&&plan[i+1].ear!==p.ear){
+        $("ovStatus").textContent="Switching ears. Next tones come from the other side.";
+        await sleep(2200);
+      }
+    }
+  }catch(e){aborted=true;}
+  endTest(sess,aborted);
+}
+function endTest(sess,aborted){
+  if(T){sess.stats={falsePress:T.falsePress,catchTrials:T.catchTrials,catchHits:T.catchHits,trials:T.trials,complete:!aborted};}
+  T&&(T.running=false);T=null;
+  $("overlay").hidden=true;
+  const any=Object.keys(sess.results.R).length+Object.keys(sess.results.L).length;
+  if(any){session=sess;store(STORE_KEY,session);}
+  renderAll();
+  $("agH").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function setOvEar(e){const el=$("ovEar");el.className="ear-chip "+e;el.textContent=e==="R"?"Right ear":"Left ear";}
+function togglePause(){if(!T)return;T.paused=!T.paused;$("ovPaused").hidden=!T.paused;$("ovPause").textContent=T.paused?"Resume":"Pause";}
+
+/* ---------- UI: frequency list ---------- */
+function buildFreqList(set){
+  const sr=getCtxRateSafe(),box=$("freqList");box.innerHTML="";
+  for(const f of FREQS){
+    const ok=f<sr*0.45;
+    const lab=document.createElement("label");lab.className=(f>8000?"ehf":"")+(ok?"":" off");
+    lab.title=ok?(f>8000?"Extended high frequency":""):`Needs a sample rate above ${Math.ceil(f/0.45/1000)} kHz`;
+    lab.innerHTML=`<input type="checkbox" value="${f}" ${set.has(f)&&ok?"checked":""} ${ok?"":"disabled"}>${fmtF(f)}`;
+    box.appendChild(lab);
+  }
+  updateEstimate();
+}
+function getCtxRateSafe(){try{return getCtxNoResume().sampleRate}catch(e){return 48000}}
+function getCtxNoResume(){if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;ctx=new AC({latencyHint:"interactive"});}return ctx;}
+function updateEstimate(){
+  const n=document.querySelectorAll("#freqList input:checked").length;
+  const min=Math.round((n*2+2)*0.6);
+  $("estTime").textContent=n?`${n} frequencies × 2 ears ≈ ${min} min`:"Pick at least one frequency";
+  $("startBtn").disabled=!n;
+}
+
+/* ---------- audiogram ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;}
+const SEV=[[-10,15,"Normal"],[15,25,"Slight"],[25,40,"Mild"],[40,55,"Moderate"],[55,70,"Mod.-severe"],[70,90,"Severe"],[90,120,"Profound"]];
+function category(db){if(db==null)return "—";for(const [a,b,n] of SEV)if(db<=b)return n==="Mod.-severe"?"Moderately severe":n;return "Profound";}
+function drawAudiogram(){
+  const svg=$("audiogram");svg.innerHTML="";
+  const W=700,H=560,m={l:52,r:92,t:52,b:40},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  const lx0=Math.log2(125/1.25),lx1=Math.log2(20000*1.12);
+  const X=f=>m.l+(Math.log2(f)-lx0)/(lx1-lx0)*pw;
+  const Y=db=>m.t+(db+10)/130*ph;
+  // ehf region
+  const xd=X(Math.sqrt(8000*9000));
+  el("rect",{x:xd,y:m.t,width:m.l+pw-xd,height:ph,fill:"var(--ehf)"},svg);
+  // severity bands
+  SEV.forEach(([a,b,n],i)=>{
+    if(i%2===1)el("rect",{x:m.l,y:Y(a),width:pw,height:Y(b)-Y(a),fill:"var(--band)",opacity:.9},svg);
+    el("text",{x:m.l+pw+8,y:(Y(a)+Y(b))/2+4,"font-size":10.5,fill:"var(--muted)"},svg,n);
+  });
+  // horizontal grid
+  for(let d=-10;d<=120;d+=10){
+    el("line",{x1:m.l,x2:m.l+pw,y1:Y(d),y2:Y(d),stroke:d===0?"var(--grid-strong)":"var(--grid)","stroke-width":d===0?1.4:1},svg);
+    el("text",{x:m.l-8,y:Y(d)+4,"text-anchor":"end","font-size":11,fill:"var(--muted)"},svg,d);
+  }
+  // vertical grid
+  const majors=[125,250,500,1000,2000,4000,8000,16000];
+  for(const f of FREQS){
+    const maj=majors.includes(f);
+    el("line",{x1:X(f),x2:X(f),y1:m.t,y2:m.t+ph,stroke:maj?"var(--grid-strong)":"var(--grid)","stroke-width":1,"stroke-dasharray":maj?"":"3 3"},svg);
+  }
+  majors.forEach(f=>el("text",{x:X(f),y:m.t-10,"text-anchor":"middle","font-size":11.5,fill:"var(--ink)"},svg,fmtF(f)));
+  [3000,6000,10000,20000].forEach(f=>el("text",{x:X(f),y:m.t+ph+16,"text-anchor":"middle","font-size":10,fill:"var(--muted)"},svg,fmtF(f)));
+  el("line",{x1:xd,x2:xd,y1:m.t-4,y2:m.t+ph,stroke:"var(--grid-strong)","stroke-width":1.4},svg);
+  el("text",{x:(xd+m.l+pw)/2,y:m.t-30,"text-anchor":"middle","font-size":10,fill:"var(--muted)","letter-spacing":".06em"},svg,"EXTENDED HIGH FREQ.");
+  el("text",{x:(m.l+xd)/2,y:m.t-30,"text-anchor":"middle","font-size":10,fill:"var(--muted)","letter-spacing":".06em"},svg,"CONVENTIONAL RANGE · Hz");
+  el("text",{x:14,y:m.t+ph/2,transform:`rotate(-90 14 ${m.t+ph/2})`,"text-anchor":"middle","font-size":11,fill:"var(--muted)"},svg,"Hearing level, dB HL");
+  el("rect",{x:m.l,y:m.t,width:pw,height:ph,fill:"none",stroke:"var(--grid-strong)"},svg);
+  // ears
+  for(const ear of ["L","R"]){
+    const col=ear==="R"?"var(--right)":"var(--left)";
+    const pts=Object.entries(session.results[ear]||{}).map(([f,v])=>({f:+f,...v})).sort((a,b)=>a.f-b.f);
+    const g=el("g",{},svg);
+    for(let i=0;i<pts.length-1;i++){
+      const a=pts[i],b=pts[i+1];if(a.nr||b.nr)continue;
+      el("line",{x1:X(a.f),y1:Y(a.hl),x2:X(b.f),y2:Y(b.hl),stroke:col,"stroke-width":1.8,"stroke-dasharray":ear==="L"?"6 4":""},g);
+    }
+    for(const p of pts){
+      const x=X(p.f),y=Y(p.hl),s=el("g",{},g);
+      el("title",{},s,`${ear==="R"?"Right":"Left"} ${fmtHz(p.f)}: ${p.nr?"no response at "+p.hl:p.hl} dB HL`);
+      if(ear==="R")el("circle",{cx:x,cy:y,r:6.5,fill:"var(--surface)",stroke:col,"stroke-width":2.2},s);
+      else el("path",{d:`M${x-5.5} ${y-5.5}L${x+5.5} ${y+5.5}M${x+5.5} ${y-5.5}L${x-5.5} ${y+5.5}`,stroke:col,"stroke-width":2.4,fill:"none"},s);
+      if(p.nr){
+        const dx=ear==="R"?-1:1,x0=x+dx*6,y0=y+6,x1=x+dx*16,y1=y+16;
+        el("path",{d:`M${x0} ${y0}L${x1} ${y1}M${x1} ${y1}h${-dx*6}M${x1} ${y1}v-6`,stroke:col,"stroke-width":1.8,fill:"none"},s);
+      }
+    }
+  }
+}
+
+/* ---------- summary + table ---------- */
+function val(ear,f){const v=session.results[ear]?.[f];return v?v:null;}
+function avg(ear,fs){const xs=fs.map(f=>val(ear,f)).filter(v=>v&&!v.nr).map(v=>v.hl);return xs.length===fs.length?xs.reduce((a,b)=>a+b,0)/xs.length:null;}
+function avgAny(ear,fs){const xs=fs.map(f=>val(ear,f)).filter(Boolean).map(v=>v.hl);return xs.length?{v:xs.reduce((a,b)=>a+b,0)/xs.length,n:xs.length,nr:fs.some(f=>val(ear,f)?.nr)}:null;}
+function renderSummary(){
+  const box=$("summary");box.innerHTML="";
+  const card=(cls,label,r,l,note)=>{const d=document.createElement("div");d.className="stat "+cls;d.innerHTML=`<span class="label">${label}</span><span class="v">R <b>${r}</b> · L <b>${l}</b></span>${note?`<span class="small muted">${note}</span>`:""}`;box.appendChild(d);};
+  const f1=v=>v==null?"—":Math.round(v);
+  const pR=avg("R",[500,1000,2000,4000]),pL=avg("L",[500,1000,2000,4000]);
+  card("","Pure-tone average 0.5–4 kHz",f1(pR),f1(pL),`${category(pR)} / ${category(pL)}`);
+  const hR=avgAny("R",[4000,6000,8000]),hL=avgAny("L",[4000,6000,8000]);
+  card("","High-frequency avg 4–8 kHz",f1(hR?.v),f1(hL?.v),`${category(hR?.v)} / ${category(hL?.v)}`);
+  const e=[10000,11200,12500,14000,16000];const eR=avgAny("R",e),eL=avgAny("L",e);
+  card("","Extended avg 10–16 kHz",(eR?f1(eR.v):"—")+(eR?.nr?"+":""),(eL?f1(eL.v):"—")+(eL?.nr?"+":""),(eR?.nr||eL?.nr)?"+ includes no-response points, so the true value is higher":"Age-dependent even in healthy ears");
+}
+function renderTable(){
+  const t=$("thrTable");
+  const used=new Set();for(const ear of ["R","L"])Object.keys(session.results[ear]||{}).forEach(f=>used.add(+f));
+  document.querySelectorAll("#freqList input:checked").forEach(i=>used.add(+i.value));
+  const fs=FREQS.filter(f=>used.has(f));
+  let h="<thead><tr><th style='text-align:left;padding-left:10px'>Hz</th>"+fs.map(f=>`<th class="${f>8000?"ehf":""}">${fmtF(f)}</th>`).join("")+"</tr></thead><tbody>";
+  for(const ear of ["R","L"]){
+    h+=`<tr><td class="ear ${ear.toLowerCase()}">${ear==="R"?"Right":"Left"}</td>`;
+    for(const f of fs){const v=val(ear,f);const s=v?(v.nr?"NR"+v.hl:String(v.hl)):"";
+      h+=`<td class="${f>8000?"ehf":""}"><input class="tin" id="t_${ear}_${f}" data-ear="${ear}" data-f="${f}" value="${s}" inputmode="text" aria-label="${ear} ${f} Hz"></td>`;}
+    h+="</tr>";
+  }
+  t.innerHTML=h+"</tbody>";
+}
+function parseCell(s){
+  s=s.trim().toUpperCase();if(!s)return null;
+  if(s.startsWith("NR")){const n=parseFloat(s.slice(2));return {nr:true,hl:isFinite(n)?n:90};}
+  const n=parseFloat(s);return isFinite(n)?{nr:false,hl:clamp(Math.round(n),-10,120)}:undefined;
+}
+function renderFlags(){
+  const box=$("flags");const items=[];
+  const st=session.stats;
+  if(session.example){}
+  else{
+    if(st){
+      const fpr=st.catchTrials?st.catchHits/st.catchTrials:0;
+      if(st.catchTrials)items.push([fpr>0.2?"warn":"ok",`Silent catch trials answered: ${st.catchHits} of ${st.catchTrials}${fpr>0.2?". That is high, so thresholds may read better than your hearing really is.":"."}`]);
+      if(st.falsePress>8)items.push(["warn",`${st.falsePress} presses between tones. Try pressing only when you are fairly sure a tone was there.`]);
+      if(!st.complete)items.push(["warn","The test was stopped early. Results so far are kept."]);
+    }
+    for(const ear of ["R","L"]){
+      const r=session.retest?.[ear];if(!r||!r.first||!r.second)continue;
+      const d=Math.abs(r.first.hl-r.second.hl);
+      items.push([d>10?"warn":"ok",`${ear==="R"?"Right":"Left"} 1 kHz retest: ${r.first.hl} then ${r.second.hl} dB HL${d>10?" (more than 10 dB apart: consider repeating the test)":" (consistent)"}.`]);
+    }
+  }
+  // asymmetry
+  let asym=0;for(const f of [500,1000,2000,3000,4000,6000,8000]){const a=val("R",f),b=val("L",f);if(a&&b&&!a.nr&&!b.nr&&Math.abs(a.hl-b.hl)>=15)asym++;}
+  if(asym>=2)items.push(["warn","Ears differ by 15 dB or more at two or more frequencies. An asymmetric loss is worth checking with an audiologist or ENT."]);
+  box.innerHTML=items.map(([k,t])=>`<div><span style="color:var(${k==="warn"?"--warn":"--ok"});font-weight:600">${k==="warn"?"▲":"●"}</span> ${t}</div>`).join("");
+}
+function renderMeta(){
+  $("exampleNotice").hidden=!session.example;
+  $("sessMeta").textContent=session.example?"":(session.date?new Date(session.date).toLocaleString():"manual entry")+(session.calFS!=null?` · 0 dBFS = ${session.calFS} dB SPL`:"");
+}
+function renderResults(){drawAudiogram();renderSummary();renderMeta();renderFlags();}
+function renderAll(){renderResults();renderTable();renderEQ();}
+
+/* ---------- EQ ---------- */
+function peakCoefs(f0,g,Q,fs){
+  const A=Math.pow(10,g/40),w=2*Math.PI*f0/fs,al=Math.sin(w)/(2*Q),cw=Math.cos(w);
+  return {b0:1+al*A,b1:-2*cw,b2:1-al*A,a0:1+al/A,a1:-2*cw,a2:1-al/A};
+}
+function magDb(c,f,fs){
+  const w=2*Math.PI*f/fs,cr=Math.cos(w),ci=-Math.sin(w),c2r=Math.cos(2*w),c2i=-Math.sin(2*w);
+  const nr=c.b0+c.b1*cr+c.b2*c2r,ni=c.b1*ci+c.b2*c2i,dr=c.a0+c.a1*cr+c.a2*c2r,di=c.a1*ci+c.a2*c2i;
+  return 10*Math.log10((nr*nr+ni*ni)/(dr*dr+di*di));
+}
+function respAt(bands,f,fs){let s=0;for(const b of bands)s+=magDb(peakCoefs(b.f,b.g,b.q,fs),f,fs);return s;}
+const qFromOct=N=>Math.sqrt(Math.pow(2,N))/(Math.pow(2,N)-1);
+function interpLog(pts,f){ // pts sorted [{f,g}]
+  if(!pts.length)return 0;
+  if(f<=pts[0].f)return pts[0].g;if(f>=pts[pts.length-1].f)return pts[pts.length-1].g;
+  for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];if(f>=a.f&&f<=b.f){const t=Math.log2(f/a.f)/Math.log2(b.f/a.f);return a.g+t*(b.g-a.g);}}
+  return 0;
+}
+const NALK={125:-17,250:-17,500:-8,750:-3,1000:1,1500:1,2000:-1,3000:-2,4000:-2,6000:-2,8000:-2};
+function eqSettings(){return {rule:$("eqRule").value,strength:+$("strength").value/100,floor:+$("floor").value,cap:+$("cap").value,ref:$("eqRef").value,ears:$("eqEars").value,bands:$("eqBands").value,ehf:$("eqEHF").checked};}
+let EQ=null;
+function computeEQ(){
+  const p=eqSettings(),FS=48000;
+  const loss={L:{},R:{}};
+  for(const ear of ["L","R"])for(const [f,v] of Object.entries(session.results[ear]||{})){if(!p.ehf&&+f>8000)continue;loss[ear][+f]=v.hl;}
+  if(p.ears==="avg"){
+    const all=new Set([...Object.keys(loss.L),...Object.keys(loss.R)].map(Number));const m={};
+    for(const f of all){const a=loss.L[f],b=loss.R[f];m[f]=a!=null&&b!=null?(a+b)/2:(a!=null?a:b);}
+    loss.L={...m};loss.R={...m};
+  }
+  const gains={L:{},R:{}};
+  for(const ear of ["L","R"]){
+    const H=loss[ear];
+    if(p.rule==="nalr"){
+      const x=0.05*((H[500]??H[1000]??0)+(H[1000]??0)+(H[2000]??H[1000]??0));
+      for(const f in H){const k=NALK[f]??-2;gains[ear][f]=x+0.31*H[f]+k;}
+    }else for(const f in H)gains[ear][f]=p.strength*Math.max(0,H[f]-p.floor);
+  }
+  // reference offset (shared across ears to keep L/R balance)
+  let off=0;const allG=[...Object.values(gains.L),...Object.values(gains.R)];
+  if(allG.length){
+    if(p.ref==="min")off=Math.min(...allG);
+    else if(p.ref==="k1"){const ks=[gains.L[1000],gains.R[1000]].filter(v=>v!=null);off=ks.length?ks.reduce((a,b)=>a+b,0)/ks.length:Math.min(...allG);}
+  }
+  const target={L:[],R:[]};
+  for(const ear of ["L","R"])target[ear]=Object.entries(gains[ear]).map(([f,g])=>({f:+f,g:clamp(g-off,-p.cap,p.cap)})).sort((a,b)=>a.f-b.f);
+  // band centres
+  let centers;
+  if(p.bands==="oct8"){centers=[125,250,500,1000,2000,4000,8000,16000].filter(f=>p.ehf||f<=8000);}
+  else{const s=new Set([...target.L.map(x=>x.f),...target.R.map(x=>x.f)]);centers=[...s].sort((a,b)=>a-b);}
+  const qs=centers.map((f,i)=>{
+    const lo=i>0?Math.log2(f/centers[i-1]):null,hi=i<centers.length-1?Math.log2(centers[i+1]/f):null;
+    const N=lo!=null&&hi!=null?(lo+hi)/2:(lo??hi??1);
+    return clamp(qFromOct(Math.max(0.45,N*1.5)),0.5,3);
+  });
+  const bands={L:[],R:[]};
+  for(const ear of ["L","R"]){
+    if(!target[ear].length){bands[ear]=[];continue;}
+    const b=centers.map((f,i)=>({f,q:+qs[i].toFixed(2),g:interpLog(target[ear],f)}));
+    for(let it=0;it<80;it++){
+      for(const x of b){const t=interpLog(target[ear],x.f),r=respAt(b,x.f,FS);x.g=clamp(x.g+0.55*(t-r),-p.cap-8,p.cap+8);}
+    }
+    b.forEach(x=>x.g=Math.round(x.g*10)/10);
+    bands[ear]=b;
+  }
+  // preamp from peak of response
+  let peak=0;const grid=[];for(let f=20;f<=20000;f*=Math.pow(2,1/24))grid.push(f);
+  for(const ear of ["L","R"])for(const f of grid)peak=Math.max(peak,respAt(bands[ear],f,FS));
+  const preamp=-Math.ceil(peak*2)/2;
+  EQ={p,target,bands,centers,preamp,peak,grid,FS};
+  return EQ;
+}
+function renderEQ(){
+  const p=eqSettings();
+  $("strengthV").textContent=Math.round(p.strength*100)+"%";$("floorV").textContent=p.floor+" dB HL";$("capV").textContent="+"+p.cap+" dB";
+  const ratioOn=p.rule==="ratio";$("strength").disabled=!ratioOn;$("floor").disabled=!ratioOn;
+  document.querySelectorAll("[data-str]").forEach(b=>b.disabled=!ratioOn);
+  computeEQ();
+  $("preampV").textContent=`Preamp ${EQ.preamp.toFixed(1)} dB`;
+  $("maxBoostTxt").textContent=`+${EQ.peak.toFixed(1)} dB`;
+  drawEQ();renderBandTable();renderExport();
+  if(PV.playing)rebuildPreview();
+}
+function drawEQ(){
+  const svg=$("eqChart");svg.innerHTML="";
+  const W=700,H=300,m={l:46,r:16,t:16,b:34},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  let maxR=0,minR=0;for(const ear of ["L","R"])for(const f of EQ.grid){const r=respAt(EQ.bands[ear],f,EQ.FS);maxR=Math.max(maxR,r);minR=Math.min(minR,r);}
+  const y1=Math.max(12,Math.ceil((maxR+2)/6)*6),y0=Math.min(-6,Math.floor((minR-2)/6)*6);
+  const X=f=>m.l+Math.log10(f/20)/3*pw,Y=d=>m.t+(y1-d)/(y1-y0)*ph;
+  el("rect",{x:X(8500),y:m.t,width:m.l+pw-X(8500),height:ph,fill:"var(--ehf)"},svg);
+  for(let d=y0;d<=y1;d+=6){el("line",{x1:m.l,x2:m.l+pw,y1:Y(d),y2:Y(d),stroke:d===0?"var(--grid-strong)":"var(--grid)","stroke-width":d===0?1.4:1},svg);el("text",{x:m.l-6,y:Y(d)+4,"text-anchor":"end","font-size":11,fill:"var(--muted)"},svg,(d>0?"+":"")+d);}
+  for(const f of [20,50,100,200,500,1000,2000,5000,10000,20000]){el("line",{x1:X(f),x2:X(f),y1:m.t,y2:m.t+ph,stroke:"var(--grid)"},svg);el("text",{x:X(f),y:H-12,"text-anchor":"middle","font-size":11,fill:"var(--muted)"},svg,f>=1000?(f/1000)+"k":f);}
+  el("text",{x:m.l+pw,y:H-0,"text-anchor":"end","font-size":10,fill:"var(--muted)"},svg,"Hz");
+  el("rect",{x:m.l,y:m.t,width:pw,height:ph,fill:"none",stroke:"var(--grid-strong)"},svg);
+  for(const ear of ["L","R"]){
+    const col=ear==="R"?"var(--right)":"var(--left)";
+    if(EQ.target[ear].length){
+      const t=EQ.grid.filter(f=>f>=EQ.target[ear][0].f/1.5&&f<=EQ.target[ear][EQ.target[ear].length-1].f*1.2).map(f=>`${X(f).toFixed(1)},${Y(interpLog(EQ.target[ear],f)).toFixed(1)}`).join(" ");
+      el("polyline",{points:t,fill:"none",stroke:col,"stroke-width":1.2,"stroke-dasharray":"3 3",opacity:.75},svg);
+    }
+    const pts=EQ.grid.map(f=>`${X(f).toFixed(1)},${Y(respAt(EQ.bands[ear],f,EQ.FS)).toFixed(1)}`).join(" ");
+    el("polyline",{points:pts,fill:"none",stroke:col,"stroke-width":2.4,"stroke-dasharray":ear==="L"&&EQ.p.ears==="avg"?"8 5":""},svg);
+  }
+}
+function renderBandTable(){
+  const t=$("bandTable");const n=EQ.centers.length;
+  let h="<thead><tr><th style='text-align:left;padding-left:10px'>Band</th>"+EQ.centers.map((f,i)=>`<th class="${f>8000?"ehf":""}">${i+1}</th>`).join("")+"</tr></thead><tbody>";
+  h+="<tr><td class='ear'>Freq</td>"+EQ.centers.map(f=>`<td class="mono ${f>8000?"ehf":""}">${fmtF(f)}</td>`).join("")+"</tr>";
+  const qrow=(EQ.bands.R.length?EQ.bands.R:EQ.bands.L);
+  h+="<tr><td class='ear'>Q</td>"+EQ.centers.map((f,i)=>`<td class="mono ${f>8000?"ehf":""}">${qrow[i]?qrow[i].q.toFixed(2):"—"}</td>`).join("")+"</tr>";
+  for(const ear of ["R","L"])h+=`<tr><td class="ear ${ear.toLowerCase()}">${ear==="R"?"Right":"Left"} dB</td>`+EQ.centers.map((f,i)=>`<td class="mono ${f>8000?"ehf":""}">${EQ.bands[ear][i]?sgn(EQ.bands[ear][i].g):"—"}</td>`).join("")+"</tr>";
+  t.innerHTML=h+"</tbody>";
+  if(!n)t.innerHTML="<tbody><tr><td>No thresholds yet.</td></tr></tbody>";
+}
+let expFmt="list";
+const FMT_HELP={
+  list:"Enter these as bell / peak bands in any parametric EQ on your monitor path (Logic Channel EQ, Pro-Q, ReaEQ, Ableton EQ Eight in L/R mode…). Use the preamp as output gain.",
+  apo:"Config for Equalizer APO / Peace on Windows, and for players and plugins that read the same format (for example AutoEQ-style loaders). Separate L and R filters are included.",
+  csv:"Target curve on a 1/12-octave grid, 20 Hz–20 kHz, already including the preamp. Import it as a custom target or curve in tools that accept frequency/gain CSV.",
+  json:"Your full session: thresholds, calibration, settings. Copy it somewhere safe to compare future tests or reload it here."
+};
+function buildExport(expFmt){
+  const d=new Date().toISOString().slice(0,10);
+  const both=EQ.p.ears==="avg";
+  let s="";
+  if(expFmt==="list"){
+    s=`Hearing compensation EQ · ${d}\nRule: ${EQ.p.rule==="nalr"?"NAL-R adapted":Math.round(EQ.p.strength*100)+"% of loss above "+EQ.p.floor+" dB HL"}, cap +${EQ.p.cap} dB\nPreamp / output gain: ${EQ.preamp.toFixed(1)} dB\nAll bands: bell / peaking\n\n`;
+    s+=both?"Band  Freq       Q     Gain (both)\n":"Band  Freq       Q     Left     Right\n";
+    EQ.centers.forEach((f,i)=>{const L=EQ.bands.L[i],R=EQ.bands.R[i];const q=(R||L).q.toFixed(2);
+      s+=`${String(i+1).padEnd(6)}${(f+" Hz").padEnd(11)}${q.padEnd(6)}`+(both?`${L?sgn(L.g):"—"} dB`:`${(L?sgn(L.g)+" dB":"—").padEnd(9)}${R?sgn(R.g)+" dB":"—"}`)+"\n";});
+  }else if(expFmt==="apo"){
+    s=`# Hearing compensation EQ, ${d}\nPreamp: ${EQ.preamp.toFixed(1)} dB\n`;
+    const block=(ch,b)=>{let o=`Channel: ${ch}\n`;b.forEach((x,i)=>o+=`Filter ${i+1}: ON PK Fc ${x.f} Hz Gain ${x.g.toFixed(1)} dB Q ${x.q.toFixed(2)}\n`);return o;};
+    s+=both?block("all",EQ.bands.L):block("L",EQ.bands.L)+block("R",EQ.bands.R)+"Channel: all\n";
+  }else if(expFmt==="csv"){
+    s="frequency_hz,left_db,right_db\n";
+    for(let f=20;f<=20001;f*=Math.pow(2,1/12))s+=`${f.toFixed(1)},${(respAt(EQ.bands.L,f,EQ.FS)+EQ.preamp).toFixed(2)},${(respAt(EQ.bands.R,f,EQ.FS)+EQ.preamp).toFixed(2)}\n`;
+  }else{
+    s=JSON.stringify({app:"Extended-Range Audiometer",version:1,session,eq:{settings:EQ.p,preamp:EQ.preamp,bands:EQ.bands}},null,1);
+  }
+  return s;
+}
+function renderExport(){$("expText").value=buildExport(expFmt);$("fmtHelp").textContent=FMT_HELP[expFmt];}
+
+/* ---------- downloads ---------- */
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
+// Inside Claude's artifact viewer, files go through the downloads capability; elsewhere (self-hosted) a normal blob link.
+let DL=null;
+try{const u=window.claude&&window.claude.use&&window.claude.use("downloads");if(u&&u.then)u.then(d=>{DL=d;},()=>{});}catch(e){}
+function dlNote(el,msg){if(!el)return;el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>el.textContent="",4000);}
+function download(name,data,type,msgEl){
+  if(DL){
+    DL.save({filename:name,data}).then(()=>dlNote(msgEl,"Saved "+name),e=>{
+      const c=e&&e.code;
+      if(c==="declined")return;
+      dlNote(msgEl,c==="rate_limited"?"A save is already waiting for confirmation.":c==="host_unavailable"?"This app can't save files. Open the page in a browser to download.":"Download isn't available here. Use Copy instead.");
+    });
+    return;
+  }
+  const blob=data instanceof Blob?data:new Blob([data],{type});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");
+  a.href=url;a.download=name;a.style.display="none";document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+// fixed light palette so the exported image prints cleanly whatever the screen theme
+const PRINT={"--ehf":"#f3eee3","--band":"#f4f7f8","--grid":"#e1e8ec","--grid-strong":"#b9c6cd","--muted":"#566874","--ink":"#14212b","--surface":"#ffffff","--right":"#c62f28","--left":"#1d5bbd"};
+const esc=t=>String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function audiogramSVG(){
+  const inner=$("audiogram").innerHTML.replace(/var\((--[a-z0-9-]+)\)/g,(m,k)=>PRINT[k]||"#000");
+  const when=session.example?"Example data":(session.date?new Date(session.date).toLocaleString():"Entered manually");
+  const cal=session.calFS!=null?`0 dBFS = ${session.calFS} dB SPL${session.calFS===100?" (volume set by ear, estimated)":""}`:"";
+  const pR=avg("R",[500,1000,2000,4000]),pL=avg("L",[500,1000,2000,4000]);
+  const pta=`PTA 0.5–4 kHz: R ${pR==null?"—":Math.round(pR)+" dB HL ("+category(pR)+")"} · L ${pL==null?"—":Math.round(pL)+" dB HL ("+category(pL)+")"}`;
+  const top=78,W=700,H=560+top+70;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W*2}" height="${H*2}" viewBox="0 0 ${W} ${H}">
+<style>text{font-family:Menlo,Consolas,"DejaVu Sans Mono",monospace}</style>
+<rect width="${W}" height="${H}" fill="#ffffff"/>
+<text x="24" y="32" font-size="19" font-weight="700" fill="#14212b" style="font-family:Helvetica,Arial,sans-serif">Audiogram · air conduction, 125 Hz – 20 kHz</text>
+<text x="24" y="52" font-size="11" fill="#566874">${esc(when)}${cal?" · "+esc(cal):""}</text>
+<text x="24" y="68" font-size="11" fill="#566874">${esc(pta)}</text>
+<g transform="translate(${W-150},20)">
+ <circle cx="7" cy="0" r="5.5" fill="none" stroke="#c62f28" stroke-width="2"/><text x="20" y="4" font-size="11" fill="#14212b">Right ear</text>
+ <path d="M2 14L12 24M12 14L2 24" stroke="#1d5bbd" stroke-width="2"/><text x="20" y="23" font-size="11" fill="#14212b">Left ear</text>
+ <path d="M11 34L3 42M3 42h5M3 42v-5" stroke="#566874" stroke-width="1.5" fill="none"/><text x="20" y="42" font-size="11" fill="#14212b">No response</text>
+</g>
+<g transform="translate(0,${top})">${inner}</g>
+<text x="24" y="${H-40}" font-size="10" fill="#566874">Not a medical diagnosis. Self-test results depend on volume calibration and on the frequency response</text>
+<text x="24" y="${H-26}" font-size="10" fill="#566874">of the headphones used, and can differ from a clinical audiogram by 10 dB or more.</text>
+<text x="24" y="${H-12}" font-size="10" fill="#566874">Generated with Extended-Range Audiometer.</text>
+</svg>`;
+}
+function downloadAudiogram(){
+  const svg=audiogramSVG();
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement("canvas");c.width=img.width;c.height=img.height;
+    const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0);
+    c.toBlob(b=>{if(b)download(`audiogram-${today()}.png`,b,"image/png",$("agMsg"));else download(`audiogram-${today()}.svg`,svg,"image/svg+xml",$("agMsg"));},"image/png");
+  };
+  img.onerror=()=>download(`audiogram-${today()}.svg`,svg,"image/svg+xml",$("agMsg"));
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+
+/* ---------- preview player ---------- */
+const PV={buffer:null,src:null,playing:false,eqOn:true,graph:null,name:""};
+function pinkBuffer(c){
+  const len=c.sampleRate*8,b=c.createBuffer(2,len,c.sampleRate);
+  for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for(let i=0;i<len;i++){const w=Math.random()*2-1;b0=0.99886*b0+w*0.0555179;b1=0.99332*b1+w*0.0750759;b2=0.969*b2+w*0.153852;b3=0.8665*b3+w*0.3104856;b4=0.55*b4+w*0.5329522;b5=-0.7616*b5-w*0.016898;d[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.05;b6=w*0.115926;}
+    const fade=2048;for(let i=0;i<fade;i++){d[i]*=i/fade;d[len-1-i]*=i/fade;}}
+  return b;
+}
+function buildGraph(){
+  const c=getCtx();
+  const input=c.createGain();input.channelCount=2;input.channelCountMode="explicit";input.channelInterpretation="speakers";
+  const split=c.createChannelSplitter(2),merge=c.createChannelMerger(2);input.connect(split);
+  ["L","R"].forEach((ear,ch)=>{
+    let prev=null;
+    for(const b of EQ.bands[ear]){const f=c.createBiquadFilter();f.type="peaking";f.frequency.value=Math.min(b.f,c.sampleRate*0.49);f.Q.value=b.q;f.gain.value=b.g;
+      if(prev)prev.connect(f);else split.connect(f,ch,0);prev=f;}
+    if(prev)prev.connect(merge,0,ch);else split.connect(merge,ch,ch);
+  });
+  const wet=c.createGain(),dry=c.createGain(),out=c.createGain();
+  merge.connect(wet);input.connect(dry);wet.connect(out);dry.connect(out);out.connect(c.destination);
+  wet.gain.value=PV.eqOn?1:0;dry.gain.value=PV.eqOn?0:1;out.gain.value=Math.pow(10,EQ.preamp/20);
+  return {input,wet,dry,out};
+}
+function rebuildPreview(){
+  if(!PV.src)return;const old=PV.graph;PV.graph=buildGraph();
+  try{PV.src.disconnect();}catch(e){}PV.src.connect(PV.graph.input);
+  if(old)setTimeout(()=>{try{old.out.disconnect();}catch(e){}},50);
+}
+function play(){
+  const c=getCtx();if(!PV.buffer)return;
+  stop();PV.graph=buildGraph();
+  const s=c.createBufferSource();s.buffer=PV.buffer;s.loop=true;s.connect(PV.graph.input);s.start();PV.src=s;PV.playing=true;$("playBtn").textContent="Stop";
+}
+function stop(){if(PV.src){try{PV.src.stop();PV.src.disconnect();}catch(e){}}if(PV.graph){try{PV.graph.out.disconnect();}catch(e){}}PV.src=null;PV.graph=null;PV.playing=false;$("playBtn").textContent="Play";}
+function setAB(on){
+  PV.eqOn=on;$("abEq").setAttribute("aria-pressed",on);$("abFlat").setAttribute("aria-pressed",!on);
+  if(PV.graph){const t=ctx.currentTime;PV.graph.wet.gain.setTargetAtTime(on?1:0,t,0.015);PV.graph.dry.gain.setTargetAtTime(on?0:1,t,0.015);}
+}
+
+/* ---------- wiring ---------- */
+function init(){
+  const sr=getCtxRateSafe();
+  $("srChip").textContent=`${(sr/1000).toFixed(1)} kHz · max test ${fmtF(FREQS.filter(f=>f<sr*0.45).pop())}`;
+  const updCal=()=>{const v=readCal();$("calChip").textContent=v===100?"volume set by ear · estimates":`calibrated: 0 dBFS = ${v} dB SPL`;$("calChip").className="chip"+(v===100?" warn":"");};
+  $("calFS").addEventListener("input",updCal);updCal();
+  buildFreqList(EXT_DEFAULT);
+  $("freqList").addEventListener("change",()=>{updateEstimate();renderTable();});
+  $("fStd").onclick=()=>buildFreqList(STD);
+  $("fAll").onclick=()=>buildFreqList(EXT_DEFAULT);
+  $("chkL").onclick=()=>scheduleTone("L",1000,-30,"steady",1.0);
+  $("chkR").onclick=()=>scheduleTone("R",1000,-30,"steady",1.0);
+  $("refTone").onclick=()=>scheduleTone("B",1000,-20,"steady",4.0);
+  $("startBtn").onclick=startTest;
+  $("respond").addEventListener("pointerdown",e=>{e.preventDefault();onResponse();});
+  $("respond").addEventListener("keydown",e=>{if(e.code==="Space"||e.key==="Enter")e.preventDefault();});
+  document.addEventListener("keydown",e=>{
+    if(!T||!T.running)return;
+    if(e.code==="Space"){e.preventDefault();if(!e.repeat&&$("ovIntro").hidden)onResponse();}
+    if(e.key==="Escape"){e.preventDefault();togglePause();}
+  });
+  $("ovPause").onclick=togglePause;
+  $("ovStop").onclick=()=>{if(!T)return;T.abort=true;T.paused=false;if($("ovIntro").hidden===false){$("ovBegin").onclick&&$("ovBegin").onclick();}};
+  // table editing
+  $("thrTable").addEventListener("change",e=>{
+    const i=e.target;if(!i.dataset.ear)return;const v=parseCell(i.value);
+    if(v===undefined){i.value="";return;}
+    if(session.example){session={example:false,date:null,calFS:null,results:{R:{},L:{}},retest:{},stats:null};renderTable();const again=$(`t_${i.dataset.ear}_${i.dataset.f}`);if(again)again.value=v?(v.nr?"NR"+v.hl:v.hl):"";}
+    if(v===null)delete session.results[i.dataset.ear][i.dataset.f];else session.results[i.dataset.ear][i.dataset.f]=v;
+    session.edited=true;store(STORE_KEY,session);renderResults();renderEQ();
+  });
+  // EQ controls
+  ["eqRule","strength","floor","cap","eqRef","eqEars","eqBands","eqEHF"].forEach(id=>$(id).addEventListener("input",renderEQ));
+  document.querySelectorAll("[data-str]").forEach(b=>b.onclick=()=>{$("strength").value=b.dataset.str;renderEQ();});
+  $("expTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;expFmt=b.dataset.fmt;document.querySelectorAll("#expTabs button").forEach(x=>x.setAttribute("aria-selected",x===b));renderExport();});
+  $("copyBtn").onclick=()=>{
+    const ta=$("expText");const done=m=>{$("copyMsg").textContent=m;setTimeout(()=>$("copyMsg").textContent="",2500);};
+    try{navigator.clipboard.writeText(ta.value).then(()=>done("Copied"),()=>{ta.select();done("Selected. Press ⌘C / Ctrl+C");});}catch(e){ta.select();done("Selected. Press ⌘C / Ctrl+C");}
+  };
+  $("importFile").addEventListener("change",e=>{
+    const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{const j=JSON.parse(r.result);const s=j.session||j;if(!s.results)throw 0;session=s;session.example=false;store(STORE_KEY,session);renderAll();$("copyMsg").textContent="Session loaded";}catch(err){$("copyMsg").textContent="That file is not a session export from this page.";}};
+    r.readAsText(f);
+  });
+  // preview
+  $("audioFile").addEventListener("change",async e=>{
+    const f=e.target.files[0];if(!f)return;$("srcName").textContent="Decoding…";
+    try{const buf=await getCtx().decodeAudioData(await f.arrayBuffer());PV.buffer=buf;PV.name=f.name;$("srcName").textContent=f.name;$("playBtn").disabled=false;if(PV.playing)play();}
+    catch(err){$("srcName").textContent="Could not decode that file. Try WAV, AIFF, MP3 or AAC.";}
+  });
+  $("pinkBtn").onclick=()=>{PV.buffer=pinkBuffer(getCtx());$("srcName").textContent="Pink noise (−20 dBFS RMS approx.)";$("playBtn").disabled=false;if(PV.playing)play();};
+  $("playBtn").onclick=()=>{PV.playing?stop():play();};
+  $("abFlat").onclick=()=>setAB(false);$("abEq").onclick=()=>setAB(true);
+  $("dlAudiogram").onclick=downloadAudiogram;
+  $("dlApo").onclick=()=>download(`hearing-eq-preset-${today()}.txt`,buildExport("apo"),"text/plain",$("dlMsg"));
+  $("dlList").onclick=()=>download(`hearing-eq-bands-${today()}.txt`,buildExport("list"),"text/plain",$("dlMsg"));
+  $("dlCsv").onclick=()=>download(`hearing-eq-curve-${today()}.csv`,buildExport("csv"),"text/csv",$("dlMsg"));
+  renderAll();
+}
+init();
+</script>
