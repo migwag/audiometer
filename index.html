@@ -48,7 +48,7 @@ header.top .sub{max-width:62ch;color:var(--muted);margin-top:6px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{font-family:var(--f-mono);font-size:.75rem;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);white-space:nowrap}
 .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
-.bench{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:20px;align-items:start}
+.bench{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:20px;align-items:stretch}
 @media (max-width:900px){.bench{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
 .panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
@@ -88,7 +88,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .hp-results button:last-child{border-bottom:0}
 .hp-results button:hover{background:var(--accent-soft)}
 .hp-results button span{color:var(--muted);font-size:.76rem;text-align:right}
-.hp-card{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2)}
+.hp-card{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.hp-details{border:1px solid var(--line);border-radius:8px;background:var(--surface-2);margin-top:4px}
+.hp-details summary{cursor:pointer;padding:9px 12px;display:flex;gap:10px;align-items:center;list-style:none}
+.hp-details summary::-webkit-details-marker{display:none}
+.hp-details summary::after{content:"+";font-family:var(--f-mono);color:var(--muted);font-size:1rem;line-height:1}
+.hp-details[open] summary::after{content:"−"}
+.hp-details summary #hpSum{margin-left:auto;flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hp-details .sub{padding:0 12px 12px;margin-top:0}
 .hp-card b{font-weight:600;font-size:.88rem}
 a{color:var(--accent);text-underline-offset:2px}
 .guide{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:28px;align-items:start}
@@ -201,8 +208,9 @@ textarea{width:100%;min-height:190px;font-family:var(--f-mono);font-size:.78rem;
           <button id="chkR" type="button">Play right</button>
           <span class="small muted">Check each tone comes from the correct side.</span>
         </div>
+        <details class="hp-details" id="hpDetails">
+        <summary><span class="label" style="white-space:nowrap">Headphone correction</span><span class="small muted" id="hpSum">Optional</span></summary>
         <div class="sub">
-          <span class="label">Headphone correction (optional)</span>
           <div class="field">
             <label for="hpSearch">Find your headphones in the AutoEQ database</label>
             <input id="hpSearch" type="text" placeholder="e.g. HD 650, DT 770, MDR-7506" autocomplete="off">
@@ -221,6 +229,7 @@ textarea{width:100%;min-height:190px;font-family:var(--f-mono);font-size:.78rem;
             <span class="small muted">Dashed: this model's deviation from a neutral diffuse-field response, normalized at 1 kHz. Solid: correction applied to your thresholds, in full up to 8 kHz and fading out by 12.5 kHz, where published measurements stop being reliable.</span>
           </div>
         </div>
+        </details>
       </div>
 
       <div class="step" id="cal-step">
@@ -1229,7 +1238,7 @@ function setHp(hp){
   renderAll();
 }
 function renderHp(){
-  const hp=session.hp;$("hpCard").hidden=!hp;if(!hp)return;
+  const hp=session.hp;$("hpCard").hidden=!hp;$("hpSum").textContent=hp?hp.name:"Optional";if(!hp)return;
   $("hpName").textContent=`${hp.name} · ${hp.source} · ${TARGET_LABEL[hp.target]||hp.target}`;
   $("hpTarget").value=hp.target;
   const svg=$("hpChart");svg.innerHTML="";
