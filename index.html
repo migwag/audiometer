@@ -90,6 +90,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .hp-results button span{color:var(--muted);font-size:.76rem;text-align:right}
 .hp-card{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2)}
 .hp-card b{font-weight:600;font-size:.88rem}
+a{color:var(--accent);text-underline-offset:2px}
+.guide{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:28px;align-items:start}
+@media (max-width:900px){.guide{grid-template-columns:minmax(0,1fr)}}
+.guide ol.steps{margin:0;padding-left:0;list-style:none;counter-reset:st;display:flex;flex-direction:column;gap:18px}
+.guide ol.steps>li{counter-increment:st;display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 10px}
+.guide ol.steps>li::before{content:counter(st);font-family:var(--f-mono);font-size:.8rem;color:var(--accent-ink);background:var(--accent);border-radius:50%;width:22px;height:22px;display:grid;place-items:center;grid-row:span 2}
+.guide ol.steps h3{margin:0;font-size:.98rem}
+.guide ol.steps .body{grid-column:2;display:flex;flex-direction:column;gap:6px;font-size:.88rem;color:var(--muted);max-width:72ch}
+.guide ol.steps .body b{color:var(--ink);font-weight:600}
+.guide ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+.aside{display:flex;flex-direction:column;gap:16px;min-width:0}
+.box{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;font-size:.86rem}
+.box ul{color:var(--muted)}
+.box ul b{color:var(--ink);font-weight:600}
+.calc-out{font-family:var(--f-mono);font-size:.9rem;font-variant-numeric:tabular-nums}
+.calc-out.warn{color:var(--warn)}
 .dl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .callout{font-size:.85rem;background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:10px 12px;border-left:3px solid var(--warn)}
 .callout b{color:var(--warn)}
@@ -207,11 +223,11 @@ textarea{width:100%;min-height:190px;font-family:var(--f-mono);font-size:.78rem;
         </div>
       </div>
 
-      <div class="step">
+      <div class="step" id="cal-step">
         <div class="step-title"><span class="n">2</span><h3>Set and lock the volume</h3></div>
         <div class="callout"><b>Start with the volume low.</b> The reference tone below is the loudest sound used for calibration. Raise system or interface volume until it is loud but comfortable, about a raised voice at arm's length (≈80 dB SPL). Then leave volume alone for the whole test, and note the setting so you can repeat it.</div>
         <div class="row">
-          <button id="refTone" type="button">Play reference tone (1 kHz, −20 dBFS, 4 s)</button>
+          <button id="refTone" type="button" data-tone>Play reference tone (1 kHz, −20 dBFS)</button>
         </div>
         <div class="grid2">
           <div class="field">
@@ -223,7 +239,7 @@ textarea{width:100%;min-height:190px;font-family:var(--f-mono);font-size:.78rem;
             <input id="maxHL" type="number" step="5" value="85" min="20" max="110">
           </div>
         </div>
-        <p class="small muted">With an SPL meter or measurement mic on the ear cup, measure the reference tone and enter <span class="mono">measured + 20</span>. Without one, keep 100 and set the volume by ear as above; results are then estimates in dB HL.</p>
+        <p class="small muted">With an SPL meter or measurement mic on the ear cup, measure the reference tone and enter <span class="mono">measured + 20</span>. <a href="#spl-guide" class="jump">Step-by-step guide and calculator</a>. Without one, keep 100 and set the volume by ear as above; results are then estimates in dB HL.</p>
       </div>
 
       <div class="step">
@@ -423,6 +439,89 @@ textarea{width:100%;min-height:190px;font-family:var(--f-mono);font-size:.78rem;
       </ul>
     </div>
   </section>
+
+  <section class="panel" id="spl-guide" aria-labelledby="splH">
+    <div class="panel-head">
+      <h2 id="splH">Calibrating with an SPL meter</h2>
+      <a href="#cal-step" class="jump small">Back to the calibration field</a>
+    </div>
+    <p class="small muted" style="max-width:80ch">The page needs one number: how loud a full-scale signal (0 dBFS) is at your headphones at your volume setting. You measure the 1 kHz reference tone, which plays 20 dB below full scale, and add 20. Every test tone is then set relative to that. You do not wear the headphones for this. You put the ear cup on a small flat coupler with the meter's microphone in it, which stands in for your ear.</p>
+    <div class="guide">
+      <ol class="steps">
+        <li><h3>Set up the playback chain exactly as for the test</h3>
+          <div class="body">
+            <p>Use the same headphones, cable, adapter, audio interface or output and sample rate you will test with. Turn off anything that changes level or tone: system EQ, spatial audio, loudness or volume normalization, noise cancelling, and any plugin on the output.</p>
+            <p>Set the volume to the position you will test at and write it down, for example "interface headphone knob at 2 o'clock" or "macOS volume 10 of 16". The calibration is only valid for that setting.</p>
+          </div></li>
+        <li><h3>Build a flat-plate coupler</h3>
+          <div class="body">
+            <p>Take a stiff board larger than the ear cup: MDF, thick cardboard or a cutting board. Make a hole just big enough for the microphone. Push the microphone through from below so its tip ends flush with the surface or up to 5 mm above it.</p>
+            <p>Seal any gap around the microphone with tape or putty. Lay the board flat with the microphone pointing up.</p>
+          </div></li>
+        <li><h3>Set up the meter</h3>
+          <div class="body">
+            <ul>
+              <li><b>Weighting:</b> C or Z (flat). A-weighting also reads correctly at 1 kHz.</li>
+              <li><b>Response:</b> Slow.</li>
+              <li><b>Range:</b> one that covers 60–100 dB.</li>
+              <li><b>Calibrator:</b> if you have an acoustic calibrator (94 dB at 1 kHz), check the meter with it first.</li>
+              <li><b>Measurement mic with REW or similar:</b> load the mic's calibration file and calibrate the input level before you start.</li>
+            </ul>
+          </div></li>
+        <li><h3>Check the background noise</h3>
+          <div class="body"><p>With nothing playing and a headphone cup on the coupler, read the meter. The tone reading in the next step should be at least 10 dB higher. If it isn't, find a quieter room or turn off fans and air conditioning.</p></div></li>
+        <li><h3>Place the cup and seal it</h3>
+          <div class="body">
+            <p>Put one ear cup cushion-down on the board, centred over the microphone. Weigh it down gently, for example with the headband resting naturally or a paperback book on top, so the cushion seals all round without being crushed.</p>
+            <p><b>Seal test:</b> while the tone plays, press the cup a little harder. The reading should change by less than 1 dB. If it jumps, air is leaking past the cushion; reposition it or add weight.</p>
+          </div></li>
+        <li><h3>Measure both sides</h3>
+          <div class="body">
+            <p>Start the reference tone below. It plays 1 kHz at −20 dBFS on both channels for 30 seconds. Wait 2–3 seconds for the reading to settle, then note it. Repeat for the other cup.</p>
+            <p>Lift and reseat each cup once and measure again. Use the average of all readings. Repeated readings within 1 dB of each other are good.</p>
+          </div></li>
+        <li><h3>Enter the result and lock the volume</h3>
+          <div class="body">
+            <p>Type your readings into the calculator. It adds 20 and fills in the calibration field. Do not touch the volume again until the test is done.</p>
+            <p>Recalibrate whenever you change headphones, ear pads, cable, interface or output device, and every few months otherwise.</p>
+          </div></li>
+      </ol>
+
+      <div class="aside">
+        <div class="box">
+          <span class="label">Reference tone</span>
+          <button type="button" class="primary" id="refTone2" data-tone>Play reference tone (1 kHz, −20 dBFS)</button>
+          <span class="small muted">30 seconds on both channels. Press again to stop.</span>
+        </div>
+        <div class="box">
+          <span class="label">Calculator</span>
+          <div class="grid2">
+            <div class="field"><label for="splL">Left cup (dB SPL)</label><input id="splL" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 81.5"></div>
+            <div class="field"><label for="splR">Right cup (dB SPL)</label><input id="splR" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 82.0"></div>
+          </div>
+          <p class="calc-out" id="splOut">Enter at least one reading.</p>
+          <button type="button" id="splUse" disabled>Use this value</button>
+        </div>
+        <div class="box">
+          <span class="label">What readings to expect</span>
+          <ul>
+            <li><b>75–85 dB SPL</b> is the ideal range. Enough headroom for loud test tones, and the quietest tones stay above the noise of your interface.</li>
+            <li><b>Above 90 dB:</b> turn the volume down and measure again. The reference tone should never be uncomfortable.</li>
+            <li><b>Below 70 dB:</b> turn the volume up, or the loudest test tones may be capped and show as "no response".</li>
+            <li><b>Left and right differ by more than 2 dB:</b> check the seal first. If it stays, the headphones or output are unbalanced; correct it with the balance control or keep it in mind when reading the audiogram.</li>
+          </ul>
+        </div>
+        <div class="box">
+          <span class="label">Accuracy and alternatives</span>
+          <ul>
+            <li>A flat plate reads within roughly <b>3–5 dB</b> of a real ear at 1 kHz. Clinics use a standardized artificial ear for this and are more exact.</li>
+            <li>This calibrates the level at 1 kHz only. Differences at other frequencies come from the headphones themselves; the headphone correction above handles most of that up to about 10 kHz.</li>
+            <li><b>Phone apps</b> work only as a rough check. The phone's microphone can't be placed and sealed properly, so expect several dB of error. A small external measurement mic for the phone is much better.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <!-- TEST OVERLAY -->
@@ -554,7 +653,7 @@ function scheduleTone(ear,f,dbfs,type,dur){
   const t1=t0+segs[segs.length-1][1];
   osc.start(t0);osc.stop(t1+0.05);if(lfo)lfo.stop(t1+0.05);
   osc.onended=()=>{try{merger.disconnect();env.disconnect();}catch(e){}};
-  return {t0,t1};
+  return {t0,t1,stop(){try{const t=c.currentTime;env.gain.cancelScheduledValues(t);env.gain.setValueAtTime(env.gain.value,t);env.gain.linearRampToValueAtTime(0,t+0.03);osc.stop(t+0.05);if(lfo)lfo.stop(t+0.05);}catch(e){}}};
 }
 function readCal(){const v=parseFloat($("calFS").value);return isFinite(v)?v:100;}
 function retspl(f){
@@ -1156,7 +1255,25 @@ function init(){
   $("fAll").onclick=()=>buildFreqList(EXT_DEFAULT);
   $("chkL").onclick=()=>scheduleTone("L",1000,-30,"steady",1.0);
   $("chkR").onclick=()=>scheduleTone("R",1000,-30,"steady",1.0);
-  $("refTone").onclick=()=>scheduleTone("B",1000,-20,"steady",4.0);
+  let refH=null,refTimer=null;
+  const toneBtns=[...document.querySelectorAll("[data-tone]")];
+  const setToneLabels=on=>toneBtns.forEach(b=>b.textContent=on?"Stop reference tone":"Play reference tone (1 kHz, −20 dBFS)");
+  const stopRef=()=>{if(refH){refH.stop();refH=null;}clearTimeout(refTimer);setToneLabels(false);};
+  toneBtns.forEach(b=>b.onclick=()=>{if(refH){stopRef();return;}refH=scheduleTone("B",1000,-20,"steady",30);setToneLabels(true);refTimer=setTimeout(stopRef,30200);});
+  document.querySelectorAll("a.jump").forEach(a=>a.addEventListener("click",e=>{const t=document.getElementById(a.getAttribute("href").slice(1));if(!t)return;e.preventDefault();t.scrollIntoView({behavior:"smooth",block:"start"});}));
+  const calcSpl=()=>{
+    const v=["splL","splR"].map(id=>parseFloat($(id).value)).filter(x=>isFinite(x)&&x>20&&x<140);
+    const out=$("splOut");out.className="calc-out";
+    if(!v.length){out.textContent="Enter at least one reading.";$("splUse").disabled=true;return null;}
+    const avg=v.reduce((a,b)=>a+b,0)/v.length,cal=Math.round((avg+20)*2)/2;
+    let t=`Average ${avg.toFixed(1)} dB SPL → 0 dBFS = ${cal} dB SPL`;
+    if(v.length===2&&Math.abs(v[0]-v[1])>2){t+=`. Sides differ by ${Math.abs(v[0]-v[1]).toFixed(1)} dB: check the seal.`;out.className="calc-out warn";}
+    else if(avg>90){t+=". That is loud: turn the volume down and measure again.";out.className="calc-out warn";}
+    else if(avg<70){t+=". Fairly quiet: loud test tones may be capped.";out.className="calc-out warn";}
+    out.textContent=t;$("splUse").disabled=false;return cal;
+  };
+  ["splL","splR"].forEach(id=>$(id).addEventListener("input",calcSpl));
+  $("splUse").onclick=()=>{const cal=calcSpl();if(cal==null)return;$("calFS").value=cal;$("calFS").dispatchEvent(new Event("input"));$("splOut").textContent=`Set: 0 dBFS = ${cal} dB SPL. Leave the volume where it is.`;$("splOut").className="calc-out";};
   $("startBtn").onclick=startTest;
   $("respond").addEventListener("pointerdown",e=>{e.preventDefault();onResponse();});
   $("respond").addEventListener("keydown",e=>{if(e.code==="Space"||e.key==="Enter")e.preventDefault();});
